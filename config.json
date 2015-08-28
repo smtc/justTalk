@@ -1,0 +1,9 @@
+{
+	"dbname": "justTalk",
+	"dbuser": "justTalk",
+	"dbpass": "justTalk",
+	"dbhost": "localhost",
+	"prefix": "/api",
+	"domain":"http://127.0.0.1",
+	"port": 8008
+}
