@@ -31,6 +31,9 @@ const (
 	ErrCodeNeePerm          = 115
 	ErrCodeUnmarshaLTax     = 116
 	ErrCodeInvalidUUID      = 117
+	ErrCodeGetPost          = 118
+	ErrCodeReadReqPost      = 119
+	ErrCodeCreateReply      = 120
 )
 
 var (

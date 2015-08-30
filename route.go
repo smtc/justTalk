@@ -78,6 +78,7 @@ func postApiRoute(r *gin.Engine, prefix string) {
 
 func replyApiRoute(r *gin.Engine, prefix string) {
 	r.GET(prefix+"/reply/:id", getReply)
+	r.POST(prefix+"/reply/t/:id", createReplyAPI)
 }
 
 func taxApiRoute(r *gin.Engine, prefix string) {

@@ -9,6 +9,38 @@ import (
 	"github.com/smtc/glog"
 )
 
+// 设置reply的默认值
+func setReplyDefaultValue(reply, post *Post) {
+	reply.ReplyCount = 0
+	reply.MenuOrder = 0
+	reply.LikedCount = 0
+	reply.BookmarkCount = 0
+	reply.StarCount = 0
+	reply.BlockCount = 0
+	reply.Digest = 0
+	reply.Points = 0
+
+	// 与post不同的地方
+	reply.PostParent = post.Id
+	reply.Floor = post.ReplyCount + 1
+
+	if reply.ObjectType == "" {
+		reply.ObjectType = "post"
+	}
+	if reply.SubType == "" {
+		reply.SubType = "reply"
+	}
+	if reply.PostStatus == "" {
+		reply.PostStatus = "normal"
+	}
+	if reply.ReplyStatus == "" {
+		reply.ReplyStatus = "open"
+	}
+	if reply.PingStatus == "" {
+		reply.PingStatus = "open"
+	}
+}
+
 func getReplyById(id string) (post *Post, err error) {
 	if id == "" {
 		err = errors.New("id is empty")
@@ -21,7 +53,7 @@ func getReplyById(id string) (post *Post, err error) {
 
 // 查找一个主题的回复
 func getReplyByPid(pid string, start, count int, options ...interface{}) (posts []*Post, err error) {
-	q := db.Where("object_type=?", "reply").
+	q := db.Where("sub_type=?", "reply").
 		Where("post_parent=?", pid)
 
 	if len(options) > 0 {
@@ -38,12 +70,13 @@ func getReplyByPid(pid string, start, count int, options ...interface{}) (posts 
 			}
 		}
 	} else {
-		q = q.Order("created_at desc")
+		q = q.Order("floor asc")
 	}
 
 	err = q.Offset(start).
 		Limit(count).
 		Find(&posts).Error
+
 	if err != nil && err != gorm.RecordNotFound {
 		return
 	}

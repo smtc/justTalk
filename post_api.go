@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/smtc/glog"
 	"io/ioutil"
-	"net/http"
+	//"net/http"
 )
 
 /*
@@ -99,7 +99,15 @@ func createNewTopic(c *gin.Context) {
 		return
 	}
 
-	post, tax, err := readPostFromRequest(c)
+	// read request post body
+	defer c.Request.Body.Close()
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(200, RespResult{ErrCodeReadRequest, err.Error(), nil})
+		return
+	}
+	// read post from body
+	post, err := readPostFromRequest(body)
 	if err != nil {
 		return
 	}
@@ -119,6 +127,8 @@ func createNewTopic(c *gin.Context) {
 		post.AuthorName = user.Name
 	}
 
+	tax, _ := readTaxFromRequest(body)
+
 	if err := createPost(post, user); err != nil {
 		c.JSON(200, RespResult{ErrCodeDBQuery, err.Error(), nil})
 		return
@@ -133,36 +143,32 @@ func createNewTopic(c *gin.Context) {
 }
 
 // 从post header中解出post和post的taxonomy
-func readPostFromRequest(c *gin.Context) (*Post, []*Taxonomy, error) {
+func readPostFromRequest(body []byte) (*Post, error) {
+	var post Post
+
+	err := json.Unmarshal(body, &post)
+	if err != nil {
+		return &post, err
+	}
+
+	return &post, nil
+}
+
+func readTaxFromRequest(body []byte) ([]*Taxonomy, error) {
 	var (
-		r       *http.Request = c.Request
-		post    Post
 		taxes   []*Taxonomy
 		taxInfo CategoryInfo
 	)
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		c.JSON(200, RespResult{ErrCodeReadRequest, err.Error(), nil})
-		return &post, nil, err
-	}
-
-	err = json.Unmarshal(body, &post)
-	if err != nil {
-		c.JSON(200, RespResult{ErrCodeUnmarshalPost, "unmarshal post request body failed: " + err.Error(), nil})
-		return &post, nil, err
-	}
-
-	if err = json.Unmarshal(body, &taxInfo); err == nil {
-		//glog.Info("category info: %v %s\n", taxInfo, string(body))
-		taxes = getTaxFromInfos(taxInfo.Infoes)
-	} else {
+	if err := json.Unmarshal(body, &taxInfo); err != nil {
 		glog.Error("unmarshal categroy info failed: %s %s\n", err.Error(), string(body))
 		taxes = []*Taxonomy{&UnCategory}
+	} else {
+		//glog.Info("category info: %v %s\n", taxInfo, string(body))
+		taxes = getTaxFromInfos(taxInfo.Infoes)
 	}
 
-	return &post, taxes, nil
+	return taxes, nil
 }
 
 /*
@@ -193,7 +199,15 @@ func modifyTopic(c *gin.Context) {
 		return
 	}
 
-	mpost, _, err := readPostFromRequest(c)
+	// read from request
+	defer c.Request.Body.Close()
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(200, RespResult{ErrCodeReadRequest, err.Error(), nil})
+		return
+	}
+
+	mpost, err := readPostFromRequest(body)
 	if err != nil {
 		return
 	}
@@ -229,15 +243,7 @@ func deleteTopic(c *gin.Context) {
 		c.JSON(200, RespResult{ErrCodeDBQuery, err.Error(), nil})
 		return
 	}
-	if user.Id == "administrator" {
-		user.parseUserCap()
-	}
-	if post.AuthorId != user.Id && user.capability["delete_others_posts"] == false {
-		c.JSON(200, RespResult{ErrCodeNeePerm, "need permission", nil})
-		return
-	}
-
-	err = db.Delete(&Post{}).Where("id=?", id).Error
+	err = deletePost(post, user, true)
 	if err != nil {
 		c.JSON(200, RespResult{ErrCodeDBQuery, "delete post " + id + " failed: " + err.Error(), nil})
 		return

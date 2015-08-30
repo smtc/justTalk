@@ -36,9 +36,10 @@ type Post struct {
 	Pinged          string    `sql:"type:text" json:"pinged"`
 	ContentFiltered string    `sql:"type:text" json:"content_filtered"`
 	PostParent      string    `sql:"size:60;index" json:"post_parent"`
+	Floor           int       `json:"floor"`
 	MenuOrder       int       `json:"menu_order"`
 	PostMimeType    string    `sql:"size:200" json:"post_mime_type"`
-	ReplyCount      int64     `json:"reply_count"`
+	ReplyCount      int       `json:"reply_count"`
 	LastReplyAt     time.Time `json:"last_reply_at"`
 	LikedCount      int       `json:"liked_count"`
 	BookmarkCount   int       `json:"bookmark_count"`
@@ -115,7 +116,7 @@ func getPostById(id string, loadReply bool) (*Post, error) {
 		return &post, err
 	}
 	err = db.Where("id=?", id).First(&post).Error
-	if err != nil && loadReply {
+	if err == nil && loadReply {
 		post.Replies, err = getReplyByPid(post.Id, 0, 20)
 	}
 
@@ -176,6 +177,29 @@ func createPost(post *Post, user *User) (err error) {
 	post.Points = calcutePostPoint(post, user)
 
 	err = db.Create(post).Error
+	return
+}
+
+// 删除post
+func deletePost(post *Post, user *User, delReplies bool) (err error) {
+	if user.Id == "administrator" {
+		user.parseUserCap()
+	}
+	if post.AuthorId != user.Id && user.capability["delete_others_posts"] == false {
+		err = errors.New("need perm")
+		return
+	}
+
+	//db.LogMode(true)
+	if delReplies {
+		err = db.Where("post_parent=? AND sub_type=?", post.Id, "reply").Delete(&Post{}).Error
+		if err != nil {
+			glog.Error("delete post %d replies failed: %v\n", post.Id, err)
+		}
+	}
+	err = db.Delete(post).Error
+	//db.LogMode(false)
+
 	return
 }
 

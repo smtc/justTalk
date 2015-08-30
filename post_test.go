@@ -96,6 +96,8 @@ func testPostTaxApi(t *testing.T) {
 	testPostCreate(t)
 	// 测试category下的post
 	testPostCategory(t)
+	testCreateReply(t)
+	testGetPostReply(t)
 	// 删除post
 	testDeleteTopics(t)
 
