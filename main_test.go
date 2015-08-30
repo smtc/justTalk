@@ -14,11 +14,19 @@ func TestMain(m *testing.M) {
 	deferinit.InitAll()
 	go runServer()
 
-	cleanUserData()
+	cleanDatabase()
+
 	prepareUserData()
 	code := m.Run()
 
-	cleanUserData()
+	//cleanDatabase()
 
+	// 清理redis，生成环境下慎用！！！
+	//FlushAll()
 	os.Exit(code)
+}
+
+func TestApi(t *testing.T) {
+	testUserApi(t)
+	testPostTaxApi(t)
 }

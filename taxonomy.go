@@ -26,6 +26,10 @@ type TaxInfo struct {
 	TaxId    string `json:"tax_id"`
 }
 
+type CategoryInfo struct {
+	Infoes []TaxInfo `json:"category_info"`
+}
+
 // 分类，类似于wordpress的分类，但是把wp_term_taxonomy和wp_terms合并为一个
 type Taxonomy struct {
 	Id          string `sql:"size:60" gorm:"primay_key" json:"id"`
@@ -35,7 +39,7 @@ type Taxonomy struct {
 	TermGroup   int    `json:"term_group"`
 	Taxonomy    string `sql:"size:60" json:"taxonomy"`
 	Description string `sql:"size:100000" json:"description"`
-	Parent      string `json:"parent`
+	Parent      string `json:"parent"`
 	Count       int64  `json:"count"`
 }
 
@@ -73,7 +77,7 @@ func getTaxByName(name, tax string) (*Taxonomy, error) {
 func getAllCategory() ([]*Taxonomy, error) {
 	var terms []*Taxonomy
 
-	err := db.Where("term_group=category").Find(&terms).Error
+	err := db.Where("taxonomy=?", "category").Find(&terms).Error
 	if err == gorm.RecordNotFound {
 		err = nil
 	}
@@ -96,7 +100,8 @@ func getAllTaxs(tax string) ([]*Taxonomy, error) {
 func getObjectsByTerm(term *Taxonomy, start, count int) ([]*TermRelation, error) {
 	var rel []*TermRelation
 
-	err := db.Where("term_id=?", term.Id).Offset(start).Order("create_at desc").Limit(count).Find(&rel).Error
+	err := db.Where("term_id=?", term.Id).Offset(start).Order("created_at desc").Limit(count).Find(&rel).Error
+	fmt.Println(term.Name, term.Id, rel)
 	return rel, err
 }
 
@@ -171,7 +176,7 @@ func createTaxonomy(tax *Taxonomy, user *User) (err error) {
 	}
 	user.parseUserCap()
 	if user.capability["create_taxonomy"] == false {
-		return fmt.Errorf("no authorization to create taxonomy")
+		return fmt.Errorf("user %s no authorization to create taxonomy", user.Name)
 	}
 
 	return db.Create(tax).Error

@@ -3,13 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
-	//"github.com/smtc/glog"
+	"github.com/smtc/glog"
 	"io/ioutil"
 	//"net/http"
 )
 
-// GET /api/tax/category
+// GET /api/tax/list?taxonomy=xxxx
+// todo: modify this api
 func getCategoryList(c *gin.Context) {
 	taxes, err := getAllCategory()
 	if err != nil {
@@ -22,7 +24,7 @@ func getCategoryList(c *gin.Context) {
 }
 
 // 新建taxonomy
-// POST /api/tax/category/:id
+// POST /api/tax/create/:id
 /*
 {
 	"id":,
@@ -67,4 +69,28 @@ func createCategory(c *gin.Context) {
 
 	c.JSON(200, RespResult{0, "ok", nil})
 	return
+}
+
+/*
+获取特定taxonomy的文章
+目前使用join来获取文章
+
+GET /api/cat/topics?catname=xxx&start=xx&count=xx
+*/
+func getTaxonomyTopics(c *gin.Context) {
+	tax := c.Query("catname")
+	if tax == "" {
+		glog.Warn("no categroy param found!\n")
+		getTopics(c)
+		return
+	}
+	start := getQueryIntDefault(c, "start", 0)
+	count := getQueryIntDefault(c, "count", 20)
+
+	posts, err := getTopicsByTaxonomy(tax, start, count)
+	if err != nil {
+		c.JSON(200, RespResult{ErrCodeDBQuery, err.Error(), nil})
+		return
+	}
+	c.JSON(200, RespResult{0, "ok", posts})
 }

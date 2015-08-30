@@ -57,11 +57,11 @@ type User struct {
 	ProviderId   string `json:"provider_id"`   // 用户在第三方的唯一id
 
 	// user capability
-	capability map[string]bool `json:"-" sql:"-"`
-	capParsed  bool            `json:"-" sql:"-"`
-	roles      string          `sql:"type:text" json:"-"` // 这是一个string数组, 以,分割
+	capability map[string]bool `sql:"-"`
+	capParsed  bool            `sql:"-"`
+	roles      string          `sql:"type:text"` // 这是一个string数组, 以,分割
 	// other meta data
-	metaData map[string]interface{} `json:"-" sql:"-"`
+	metaData map[string]interface{} `sql:"-"`
 }
 
 // 用户收藏，喜欢，反对，打赏等
@@ -306,6 +306,13 @@ func getPostsByUserAction(u *User, action string, start, count int) ([]*Post, er
 // 根据用户的角色，分析、填充用户的权限
 func (u *User) parseUserCap() {
 	// todo: parse user's role, fill user capability
+
+	u.capability = make(map[string]bool)
+	// 2015-08-29
+	// 为了测试：设置用户administrator的权限
+	if u.Id == "administrator" {
+		u.capability["create_taxonomy"] = true
+	}
 
 	u.capParsed = true
 }

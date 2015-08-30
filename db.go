@@ -29,7 +29,7 @@ func connectDatabases() {
 		panic(err)
 	}
 
-	db.AutoMigrate(&User{}, &Post{})
+	db.AutoMigrate(&User{}, &Post{}, &Taxonomy{}, &TermRelation{})
 	//db.LogMode(true)
 }
 

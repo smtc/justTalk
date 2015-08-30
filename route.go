@@ -16,6 +16,7 @@ func router() *gin.Engine {
 	userApiRoute(r, "/api")
 	postApiRoute(r, "/api")
 	replyApiRoute(r, "/api")
+	taxApiRoute(r, "/api")
 
 	r.GET("/test", func(c *gin.Context) {
 		exist, user, err := getCurrentUser()
@@ -57,21 +58,33 @@ func userApiRoute(r *gin.Engine, prefix string) {
 }
 
 func postApiRoute(r *gin.Engine, prefix string) {
-	r.GET(prefix+"/topic", getTopics)
-	g := r.Group(prefix + "/topic")
+	r.GET(prefix+"/topics", getTopics)
+	g := r.Group(prefix + "/topics")
 	{
 		g.GET("/", getTopics)
 		g.GET("/digest", getTopicsByDigest)
 		g.GET("/latest", getTopicsByLatest)
 		g.GET("/rocket", getTopicsByRocket)
 		g.GET("/controversy", getTopicsByControversy)
-		g.GET("/t/:id", getTopic)
-		g.POST("/t/:id", createNewTopic)
-		g.PUT("/t/:id", modifyTopic)
-		g.DELETE("/t/:id", deleteTopic)
+	}
+	gt := r.Group(prefix + "/topic")
+	{
+		gt.GET("/:id", getTopic)
+		gt.POST("/:id", createNewTopic)
+		gt.PUT("/:id", modifyTopic)
+		gt.DELETE("/:id", deleteTopic)
 	}
 }
 
 func replyApiRoute(r *gin.Engine, prefix string) {
 	r.GET(prefix+"/reply/:id", getReply)
+}
+
+func taxApiRoute(r *gin.Engine, prefix string) {
+	r.GET(prefix+"/cat/topics", getTaxonomyTopics)
+	g := r.Group(prefix + "/tax")
+	{
+		g.GET("/list", getCategoryList)
+		g.POST("/create/:id", needLogin(), createCategory)
+	}
 }

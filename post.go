@@ -35,7 +35,7 @@ type Post struct {
 	ToPing          string    `sql:"type:text" json:"to_ping"`
 	Pinged          string    `sql:"type:text" json:"pinged"`
 	ContentFiltered string    `sql:"type:text" json:"content_filtered"`
-	PostParent      string    `sql:"size:20;index" json:"post_parent"`
+	PostParent      string    `sql:"size:60;index" json:"post_parent"`
 	MenuOrder       int       `json:"menu_order"`
 	PostMimeType    string    `sql:"size:200" json:"post_mime_type"`
 	ReplyCount      int64     `json:"reply_count"`
@@ -44,7 +44,7 @@ type Post struct {
 	BookmarkCount   int       `json:"bookmark_count"`
 	StarCount       int       `json:"star_count"`
 	BlockCount      int       `json:"block_count"`
-	Points          int       `json:"point"`
+	Points          int64     `json:"point"`
 	Digest          int       `json:"digest"`
 
 	Replies []*Post `sql:"-" json:"replies"`
@@ -123,7 +123,7 @@ func getPostById(id string) (*Post, error) {
 // 更加不同的角度，查找posts
 // point: default, digest, rocket, latest, controversy
 func getPostsByPoint(point string, start, count int) (posts []*Post, ret int, err error) {
-	q := db.Where("object_type=post")
+	q := db.Where("object_type=?", "post")
 	switch point {
 	case "default":
 		q.Order("points desc")
@@ -150,7 +150,7 @@ func getPostsByPoint(point string, start, count int) (posts []*Post, ret int, er
 // 创建新的post
 // 鉴权
 // sanitize
-func createPost(post *Post) (err error) {
+func createPost(post *Post, user *User) (err error) {
 	/*
 		var (
 			npost Post
@@ -168,7 +168,12 @@ func createPost(post *Post) (err error) {
 		return errors.New("createPost: post id should supply.")
 	}
 	setPostDefaultValue(post)
-	err = db.Save(post).Error
+	post.AuthorId = user.Id
+	post.AuthorName = user.Name
+
+	post.Points = calcutePostPoint(post, user)
+
+	err = db.Create(post).Error
 	return
 }
 

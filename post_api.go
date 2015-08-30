@@ -28,7 +28,7 @@ func getTopicsByDigest(c *gin.Context) {
 
 /*
 获取最新创建文章列表：
-GET /api/topic/latest
+GET /api/topics/latest
 */
 func getTopicsByLatest(c *gin.Context) {
 	getTopicByPoint(c, "latest")
@@ -36,7 +36,7 @@ func getTopicsByLatest(c *gin.Context) {
 
 /*
 获取上升最快
-GET /api/topic/rocket
+GET /api/topics/rocket
 */
 func getTopicsByRocket(c *gin.Context) {
 	getTopicByPoint(c, "rocket")
@@ -44,7 +44,7 @@ func getTopicsByRocket(c *gin.Context) {
 
 /*
 获取争议
-GET /api/topic/controversy
+GET /api/topics/controversy
 */
 func getTopicsByControversy(c *gin.Context) {
 	getTopicByPoint(c, "controversy")
@@ -64,7 +64,7 @@ func getTopicByPoint(c *gin.Context, point string) {
 }
 
 /*
-GET /api/topic/t/{id}
+GET /api/topic/{id}
 */
 func getTopic(c *gin.Context) {
 	post, err := getPostById(c.Param("id"))
@@ -78,7 +78,7 @@ func getTopic(c *gin.Context) {
 
 /*
 创建文章：
-POST /api/topic/t/{id}
+POST /api/topic/{id}
 
 1 post的body是一个json结构体，post从这个结构体unmarshal得到
 2 post的类别信息也在这个结构体中，字段设置如下：
@@ -119,7 +119,7 @@ func createNewTopic(c *gin.Context) {
 		post.AuthorName = user.Name
 	}
 
-	if err := createPost(post); err != nil {
+	if err := createPost(post, user); err != nil {
 		c.JSON(200, RespResult{ErrCodeDBQuery, err.Error(), nil})
 		return
 	} else {
@@ -138,7 +138,7 @@ func readPostFromRequest(c *gin.Context) (*Post, []*Taxonomy, error) {
 		r       *http.Request = c.Request
 		post    Post
 		taxes   []*Taxonomy
-		taxInfo []TaxInfo
+		taxInfo CategoryInfo
 	)
 
 	defer r.Body.Close()
@@ -155,8 +155,10 @@ func readPostFromRequest(c *gin.Context) (*Post, []*Taxonomy, error) {
 	}
 
 	if err = json.Unmarshal(body, &taxInfo); err == nil {
-		taxes = getTaxFromInfos(taxInfo)
+		//glog.Info("category info: %v %s\n", taxInfo, string(body))
+		taxes = getTaxFromInfos(taxInfo.Infoes)
 	} else {
+		glog.Error("unmarshal categroy info failed: %s %s\n", err.Error(), string(body))
 		taxes = []*Taxonomy{&UnCategory}
 	}
 
@@ -165,7 +167,7 @@ func readPostFromRequest(c *gin.Context) (*Post, []*Taxonomy, error) {
 
 /*
 修改文章：
-PUT /api/topic/t/{id}
+PUT /api/topic/{id}
 */
 func modifyTopic(c *gin.Context) {
 	if c.Request.Method != "PUT" {
@@ -207,7 +209,7 @@ func modifyTopic(c *gin.Context) {
 /*
 删除文章
 
-DELETE /api/topic/t/{id}
+DELETE /api/topic/{id}
 */
 func deleteTopic(c *gin.Context) {
 	id := c.Param("id")
@@ -243,26 +245,3 @@ func deleteTopic(c *gin.Context) {
 /*
 todo: 设置文章的类别，label等属性
 */
-
-/*
-获取特定taxonomy的文章
-目前使用join来获取文章
-
-GET /api/{tax}/topics?start=xx&count=xx
-*/
-func getTaxonomyTopics(c *gin.Context) {
-	tax := c.Param("tax")
-	if tax == "" {
-		getTopics(c)
-		return
-	}
-	start := getQueryIntDefault(c, "start", 0)
-	count := getQueryIntDefault(c, "count", 20)
-
-	posts, err := getTopicsByTaxonomy(tax, start, count)
-	if err != nil {
-		c.JSON(200, RespResult{ErrCodeDBQuery, err.Error(), nil})
-		return
-	}
-	c.JSON(200, RespResult{0, "ok", posts})
-}

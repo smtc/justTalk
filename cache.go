@@ -183,3 +183,12 @@ func HDEL(key, field string) {
 	_ = c.Cmd("HDEL", key, field).Err
 	_pool.Put(c)
 }
+
+func FlushAll() {
+	c, err := _pool.Get()
+	if err != nil {
+		return
+	}
+	_ = c.Cmd("FLUSHALL").Err
+	_pool.Put(c)
+}
