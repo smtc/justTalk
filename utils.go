@@ -1,10 +1,12 @@
 package main
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	//"github.com/smtc/glog"
 )
 
 const (
@@ -28,6 +30,13 @@ const (
 	ErrCodeNeeAuthen        = 114
 	ErrCodeNeePerm          = 115
 	ErrCodeUnmarshaLTax     = 116
+	ErrCodeInvalidUUID      = 117
+)
+
+var (
+	// xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+	// 54c7dae5-dc4b-4121-bf40-bcbd1f2958d8
+	idRe = regexp.MustCompile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 )
 
 // 返回的数据格式
@@ -63,4 +72,9 @@ func getQueryIntDefault(c *gin.Context, key string, d int) int {
 		return d
 	}
 	return int(i)
+}
+
+// 校验uuid是否合法
+func validUUID(id string) bool {
+	return idRe.MatchString(id)
 }

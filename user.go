@@ -83,6 +83,11 @@ func createProviderUser(u *User) (err error) {
 	var exist bool
 
 	u.Id = strings.TrimSpace(u.Id)
+	if u.Id != "" && validUUID(u.Id) == false {
+		err = errors.New("invliad uuid")
+		return
+	}
+
 	u.Name = strings.TrimSpace(u.Name)
 	u.Email = strings.TrimSpace(u.Email)
 	u.ProviderName = strings.TrimSpace(u.ProviderName)
@@ -312,7 +317,17 @@ func (u *User) parseUserCap() {
 	// 为了测试：设置用户administrator的权限
 	if u.Id == "administrator" {
 		u.capability["create_taxonomy"] = true
+		u.capability["delete_others_posts"] = true
 	}
 
 	u.capParsed = true
+}
+
+// 创建管理员账户
+func createAdministrator() {
+
+}
+
+func grantUserAdminitrator(u *User) {
+
 }

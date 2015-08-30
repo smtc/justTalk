@@ -102,7 +102,9 @@ func getPostsByUser(u *User, start, count int, options ...interface{}) (posts []
 	return
 }
 
-func getPostById(id string) (*Post, error) {
+// 查找post
+//   loadReply: 是否查找该post的reply
+func getPostById(id string, loadReply bool) (*Post, error) {
 	var (
 		post Post
 		err  error
@@ -113,7 +115,7 @@ func getPostById(id string) (*Post, error) {
 		return &post, err
 	}
 	err = db.Where("id=?", id).First(&post).Error
-	if err != nil {
+	if err != nil && loadReply {
 		post.Replies, err = getReplyByPid(post.Id, 0, 20)
 	}
 
@@ -220,7 +222,7 @@ func getTopicsByTaxonomy(tax string, start, count int) (posts []*Post, err error
 	}
 
 	for _, id := range ids {
-		if post, err := getPostById(id.ObjectId); err == nil {
+		if post, err := getPostById(id.ObjectId, false); err == nil {
 			posts = append(posts, post)
 		} else {
 			glog.Warn("getTopicsByTaxonomy: Not found post by id: %s tax: %s\n", id.ObjectId, tax)

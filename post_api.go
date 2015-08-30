@@ -67,7 +67,7 @@ func getTopicByPoint(c *gin.Context, point string) {
 GET /api/topic/{id}
 */
 func getTopic(c *gin.Context) {
-	post, err := getPostById(c.Param("id"))
+	post, err := getPostById(c.Param("id"), true)
 	if err != nil {
 		c.JSON(200, RespResult{ErrCodeNotFound, err.Error(), nil})
 		return
@@ -175,7 +175,7 @@ func modifyTopic(c *gin.Context) {
 		return
 	}
 
-	post, err := getPostById(c.Param("id"))
+	post, err := getPostById(c.Param("id"), false)
 	if err != nil {
 		c.JSON(200, RespResult{ErrCodeNotFound, err.Error(), nil})
 		return
@@ -224,12 +224,15 @@ func deleteTopic(c *gin.Context) {
 		return
 	}
 
-	post, err := getPostById(id)
+	post, err := getPostById(id, true)
 	if err != nil {
 		c.JSON(200, RespResult{ErrCodeDBQuery, err.Error(), nil})
 		return
 	}
-	if post.AuthorId != user.Id {
+	if user.Id == "administrator" {
+		user.parseUserCap()
+	}
+	if post.AuthorId != user.Id && user.capability["delete_others_posts"] == false {
 		c.JSON(200, RespResult{ErrCodeNeePerm, "need permission", nil})
 		return
 	}

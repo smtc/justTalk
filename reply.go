@@ -20,7 +20,7 @@ func getReplyById(id string) (post *Post, err error) {
 
 // 查找一个主题的回复
 func getReplyByPid(pid string, start, count int, options ...interface{}) (posts []*Post, err error) {
-	q := db.Where("object_type=reply").
+	q := db.Where("object_type=?", "reply").
 		Where("post_parent=?", pid)
 
 	if len(options) > 0 {
@@ -37,7 +37,7 @@ func getReplyByPid(pid string, start, count int, options ...interface{}) (posts 
 			}
 		}
 	} else {
-		q = q.Order("publish_at desc")
+		q = q.Order("created_at desc")
 	}
 
 	err = q.Offset(start).
@@ -55,4 +55,9 @@ func getReplyByUser(user *User, start, count int) ([]*Post, error) {
 	return getPostsByUser(user, start, count, map[string]interface{}{
 		"object_type": "reply",
 	})
+}
+
+// 创建回复
+func createReply(reply *Post, post *Post, user *User) (err error) {
+	return
 }

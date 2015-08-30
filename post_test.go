@@ -92,8 +92,12 @@ func testPostTaxApi(t *testing.T) {
 	testTaxCreate(t)
 	testGetAllTax(t)
 
+	// 创建post
 	testPostCreate(t)
+	// 测试category下的post
 	testPostCategory(t)
+	// 删除post
+	testDeleteTopics(t)
 
 }
 
@@ -168,8 +172,21 @@ func testModifyTopic(t *testing.T) {
 	// to be complete
 }
 
-func testDeleteTopic(t *testing.T) {
+func testDeleteTopic(t *testing.T, id string, ut *userTest) {
+	//
+	rr, err := ut.fetch("DELETE", "/api/topic/"+id, nil)
+	assert(t, err == nil, "http should be ok")
+	assert(t, rr.Code == 0, "resp result should be 0: %d", rr.Code)
+}
 
+func testDeleteTopics(t *testing.T) {
+	rr, err := anonymous.fetch("DELETE", "/api/topic/"+_testPosts[0]["id"].(string), nil)
+	assert(t, err == nil, "http response should be ok")
+	assert(t, rr.Code == ErrCodeNeePerm, "anonymous should not delete post")
+
+	guotie := users["guotie"]
+	testDeleteTopic(t, _testPosts[0]["id"].(string), guotie)
+	testDeleteTopic(t, _testPosts[1]["id"].(string), administrator)
 }
 
 func testGetTaxTopics(t *testing.T, cat string, count int) {
