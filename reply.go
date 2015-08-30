@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/smtc/glog"
@@ -59,5 +60,22 @@ func getReplyByUser(user *User, start, count int) ([]*Post, error) {
 
 // 创建回复
 func createReply(reply *Post, post *Post, user *User) (err error) {
+	setPostDefaultValue(reply)
+
+	reply.PostParent = post.Id
+	reply.AuthorId = user.Id
+	reply.AuthorName = user.Name
+
+	err = db.Create(reply).Error
+	if err == nil {
+		post.ReplyCount += 1
+		post.LastReplyAt = time.Now()
+		if err2 := db.Save(post).Error; err2 != nil {
+			glog.Error("update post %s reply info failed, reply id: %s\n", post.Id, reply.Id)
+		}
+	} else {
+		return err
+	}
+
 	return
 }
